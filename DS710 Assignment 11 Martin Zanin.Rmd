@@ -1,0 +1,45 @@
+---
+title: 'DS710 - Assignment #11'
+author: "Martin Zanin"
+date: "4/8/2018"
+output: pdf_document
+---
+1. In this problem, you will use R to do further analysis on the Amazon reviews data.
+
+a.	In the Python assignment for homework 11, you created a .csv file with information about Amazon reviews.  Use scan() to read this data set into R.
+
+```{r}
+AZRev <- scan("AmazonReviews.csv", 
+              what = list(NumHelpfulVotes = numeric(),
+                          NumVotes = numeric(),
+                          Product_ID = character(),
+                          Rating = numeric(),
+                          ReviewLength = numeric(),
+                          NumExclamations = numeric(),
+                          HelpfulFraction = numeric()),
+                          skip = 1, 
+                          nlines = 568454, 
+                          sep = ",")
+
+```
+
+b.	Convert the data into a matrix or data frame in which each row represents one review.  Read the header row into R and use it to create column names for the matrix or data frame.
+```{r}
+AZRevDf <- as.data.frame(AZRev)
+AZheader <- scan("AmazonReviews.csv",
+                 what = list(NumHelpfulVotes = character(),
+                          NumVotes = character(),
+                          Product_ID = character(),
+                          Rating = character(),
+                          ReviewLength = character(),
+                          NumExclamations = character(),
+                          HelpfulFraction = character()),
+                          nlines = 1, 
+                          sep = ",")
+```
+
+```{r}
+
+
+```
+
