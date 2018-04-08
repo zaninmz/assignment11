@@ -36,10 +36,108 @@ AZheader <- scan("AmazonReviews.csv",
                           HelpfulFraction = character()),
                           nlines = 1, 
                           sep = ",")
+AZheader <- unlist(AZheader, use.names = F)
+colnames(AZRevDf) <- AZheader
 ```
+
+c.	Check whether the columns for total votes, review length, number of exclamation points, and helpful fraction are being treated as numeric vectors.  If not, create new variables by converting them into numeric vectors.
 
 ```{r}
-
-
+str(AZRevDf)
 ```
+
+They are indeed being treated as numeric vectors.
+
+d.	Examine the helpful fraction vector for unrealistic values.  If you find any, set them to missing.  Also set to missing the corresponding value of the total votes vector.  
+
+```{r}
+boxplot(AZRevDf$HelpfulFraction, main = "Proportion of reviews marked helpful", col = "blue")
+```
+
+
+
+```{r}
+which(AZRevDf$HelpfulFraction > 1)
+AZRevDf[44737, 1] <- NA
+AZRevDf[44737, 2] <- NA
+AZRevDf[44737, 7] <- NA
+AZRevDf[64422, 1] <- NA
+AZRevDf[64422, 2] <- NA
+AZRevDf[64422, 7] <- NA
+```
+
+e.	Write 1-2 sentences to document how many unrealistic values you found, what made them unrealistic, and the fact that you set those values to missing.
+
+Using the boxplot above, I noted that all proportions that are greater than one should be converted to NA along with the corresponding total votes and helpful votes observations as indicated.
+
+f.	Create a new variable that describes whether more than 50% of people who voted considered it helpful.  We will call these helpful reviews.
+
+```{r}
+AZRevDf$HelpfulReviews <- ifelse(AZRevDf$HelpfulFraction > .5, "Helpful", "Not helpful")
+```
+
+g.	Are helpful reviews longer than unhelpful ones?  Start by making appropriate graphical summaries to determine whether the review length should be transformed.  Then do a hypothesis test of whether the typical length of helpful reviews is longer the typical length of than unhelpful reviews.  State your conclusion in context.
+
+```{r}
+par(mfrow = c(1,2))
+boxplot(AZRevDf$ReviewLength ~ AZRevDf$HelpfulReviews, ylab = "review length", col = "red")
+boxplot(log(AZRevDf$ReviewLength) ~ AZRevDf$HelpfulReviews, ylab = "log(review length)", col = "green")
+```
+
+The review length is very right skewed and should be transformed as has been done in the boxplot on the right hand side above.
+
+Regarding the hypothesis test: 
+
+$H_0: \mu_H - \mu_N = 0$
+
+$H_0: \mu_H \neq \mu_N = 0$
+
+where $\mu_H$ is the mean review length of helpful reviews and $\mu_N$ is the mean review length of not helpful reviews.
+
+```{r}
+t.test(AZRevDf$ReviewLength ~ AZRevDf$HelpfulReviews)
+```
+
+A Welch Two Sample t-test yields a p-value approximating zero indicating that we reject the null hypothesis at the $\alpha =$ .05 significance level in favor of the alternative that the true population mean difference in lengths between helpful and not helpful reviews is not equal to zero. 
+
+h.	In parts h-k, you will investigate whether products with more reviews tend to have more votes on their reviews.  First, use tapply to find the maximum number of votes received by any of the product’s reviews.  Then count the number of reviews for each product ID (using tapply or another method you can think of). 
+
+```{r}
+tapply(AZRevDf$NumVotes, AZRevDf$Product_ID, max)
+table(AZRevDf$Product_ID)
+```
+
+i.	Make a scatterplot of max number of votes as a function of number of reviews.  Is there a visible trend?  If so, describe it.
+
+```{r, warning = F, message = F}
+require(tidyverse)
+AZRevSummary <- AZRevDf %>% 
+                  group_by(Product_ID) %>% 
+                    summarise(ReviewCount = n(),MaxVotes = max(NumVotes))
+qplot(AZRevSummary$ReviewCount, AZRevSummary$MaxVotes, xlab = "Review Count", ylab = "Max # of votes")
+```
+
+There appears to be a moderately positive trend between the number of reviews and the maximum number of votes received for a given product.
+
+j.	Histograms of the review counts and number of votes indicate that both variables are right-skewed.  (You can check this for yourself.)  So, a log transformation might be helpful in investigating the relationship between them.  However, some product IDs had 0 votes, which would result in an error if we tried to take the log.  Subset the variables max.votes and number.of.reviews (or whatever you called them) to only those values corresponding to products with 1 or more votes.
+
+```{r}
+AZRevSummaryWithVotes <- filter(AZRevSummary, AZRevSummary$ReviewCount > 0, AZRevSummary$ReviewCount > 0)
+```
+
+k.	Make a scatterplot of log(max.votes) as a function of log(number.of.reviews).   Is there a visible trend?  If so, describe it.  Does this tell us anything about the relationship between the untransformed max.votes and number.of.reviews?
+
+```{r, warning=F}
+qplot(log(AZRevSummaryWithVotes$ReviewCount), log(AZRevSummaryWithVotes$MaxVotes), 
+      xlab = "log(Review Count)", ylab = "log(Max # of votes)")
+```
+
+The log transformation makes the positive linear relationship between the number of reviews and maximum number of votes more pronounced. This provides further evidence that such a relationship indeed exists. Another way to assess this is to compute the correlation between the two variables as I have done below: 
+
+```{r}
+cor(AZRevSummaryWithVotes$ReviewCount, AZRevSummaryWithVotes$MaxVotes, use = "pairwise.complete.obs")
+```
+
+A Pearson correlation coefficient of approximately .4788 is in agreement with our determination above. This is also intuitive: one would defensibly expect products with more reviews to have a higher number of votes owing to their relative ubiquity.
+
 
